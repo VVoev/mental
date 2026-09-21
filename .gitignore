@@ -1,0 +1,45 @@
+# --- secrets --------------------------------------------------------------
+# Matches .env at any depth (root, apps/api, apps/web). .env.example stays.
+.env
+.env.*
+!.env.example
+
+# --- dependencies and build output ----------------------------------------
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# --- test and eval artifacts ----------------------------------------------
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# Model outputs: churn on every run and echo scenario content back.
+eval/transcripts/
+eval/ab-runs/
+eval/voice_out/
+
+# Real personal material used as eval input. Never committed.
+eval/private/
+
+# --- python (eval harness) ------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+
+# --- editors and OS -------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# --- agent local state ----------------------------------------------------
+# .claude/rules/ IS committed. Only machine-local settings are not.
+.claude/settings.local.json
+
+# --- logs -----------------------------------------------------------------
+*.log
+!decision.log

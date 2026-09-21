@@ -1,0 +1,6 @@
+{
+  "id": "02-headache",
+  "note": "Replays the exact conversation from Vlad's screenshot that surfaced the templated-questions problem and the physical-symptom gap, to compare v2 prompt behavior against v1.",
+  "age": 40,
+  "presenting_issue": "ами боли ме главата"
+}
