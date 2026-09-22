@@ -56,6 +56,7 @@ is a bug even if tests pass.
 
 - Before a change that spans more than one workspace, write the plan down and
   check it against `docs/architecture.md` rather than improvising.
+- If something change the architecture, update the architecture document. `docs/architecture.md`. needs to be always up to date.
 - Any decision that would surprise someone reading the code later goes in
   `decision.log` as a new dated entry. Never rewrite or delete old entries.
 - New user-visible behavior needs a Playwright spec that runs under `MOCK_LLM=1`.

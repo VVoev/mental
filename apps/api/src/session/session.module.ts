@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { SessionController } from './session.controller';
 import { LlmModule } from '../llm/llm.module';
-import { SpeechModule } from '../speech/speech.module';
+import { RequestLimits } from '../common/request-limits';
 
 @Module({
-  imports: [LlmModule, SpeechModule],
+  imports: [LlmModule],
+  providers: [RequestLimits],
   controllers: [SessionController],
 })
 export class SessionModule {}

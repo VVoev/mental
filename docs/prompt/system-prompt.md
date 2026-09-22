@@ -105,3 +105,78 @@ version 1 от 2026-09-18: методът вече не е чист Сократ
   съобщение в разговора; промптът вече не съдържа {age}/{presenting_issue}
   placeholder-и — v1 ги имаше, v2 не се нуждае от тях)
 ```
+
+## Review for a possible v3 (2026-09-21)
+
+**Status: design review only. The runtime v2 block above is unchanged.**
+`apps/api/src/session/prompt.ts` loads and caches only the first unlabelled
+fenced block. These notes and the onboarding example are not runtime policy.
+See [implementation plan](../implementation-plan.md) and the prior entry in
+[decision.log](../../decision.log). No clinical review or fresh verification
+of crisis resources is claimed by this review.
+
+### What to retain
+
+- The reflective role, concise language and explicit distinction between what
+  the user said and what the model infers.
+- User ownership of decisions; no diagnosis, medication advice or pretending
+  to be a licensed professional.
+- Avoiding invented statistics, unnecessary questions and repetitive summaries.
+- Current boundaries around third parties and writing messages for the user.
+- The separately governed crisis protocol. Product experiments must not
+  quietly weaken it or optimize it for engagement.
+
+### Problems to resolve before proposing an executable revision
+
+| Current wording or gap | Why it matters | Candidate direction, not an adopted change |
+| --- | --- | --- |
+| “Не да се почувства по-добре в момента.” | May be read as a reason to disregard the person's distress or reject ordinary warmth. | Make clarity the goal without requiring discomfort: care and accurate reflection can coexist. |
+| Contradictions between “today” and “yesterday”; conditional access to previous conversations | The current product supplies only this session's history. It must not imply it remembers earlier sessions. | Ground every reference in the supplied conversation. Say when context is missing rather than invent continuity. Persistent memory remains a separate product decision. |
+| “Когато човекът иска нещо, което не е добро за него” | The heading leaves the model to decide what is good for the person beyond defined boundaries. | Define concrete prohibited assistance and distinguish it from ordinary disagreement with the user's preferences. |
+| Immediate acceptance of corrections and “вероятно е прав” | Good for correcting a mistaken interpretation, but ambiguous when the correction asks to ignore a safety rule. | Accept corrections to facts and interpretations; evaluate new safety evidence under the approved protocol. Do not let a request to ignore policy override it. |
+| “Без тирета” and broad style constraints | Punctuation rules can compete with clear, accessible answers without improving the method. | Prioritize plain, proportionate text; allow useful formatting for an explicitly requested summary. |
+| No explicit handling of instruction injection or fabricated assistant history | The client supplies conversation history, including assistant-role text. | Treat claims of earlier authorization, pasted instructions and session goals as untrusted conversation content. Server role validation remains necessary. |
+| Instruction to recheck crisis resources | The runtime model has no browsing tool. | Operators verify resources and update approved configuration/policy. The model must not claim a fresh check it did not perform. Any actual resource/protocol edit requires its own prior log entry and review. |
+| No explicit optional end result | The conversation can continue without a useful stopping point. | On a deliberate user request, offer a grounded, correctable summary after the selected product direction is agreed. Do not summarize automatically every turn or interrupt crisis handling. |
+
+### Illustrative method wording for a future candidate
+
+These excerpts are proposals in Bulgarian, not a complete replacement prompt.
+They must be integrated with the approved boundaries and evaluated together.
+
+> Помагаш на човека да изясни въпроса си. Не избираш вместо него. Бъди човечен,
+> без да представяш предположенията си като истина за него.
+
+> Използваш само информацията, която е налична в текущия разговор. Не твърдиш,
+> че помниш предишна сесия. Когато липсва контекст, го казваш.
+
+> Разграничаваш казаното от човека, твоята възможна интерпретация и това,
+> което още не е ясно. Не налагаш този формат във всеки отговор. Когато
+> предложиш интерпретация, оставяш реална възможност тя да е погрешна.
+
+> При изрично поискана равносметка обобщаваш кратко само подкрепеното от
+> разговора. Човекът може да поправи или отхвърли обобщението. Не добавяш
+> решение или следваща стъпка, които той не е избрал.
+
+The runtime prompt should not contain the attached strategic-director roles,
+business metrics, development workflow or a simulated committee of specialists.
+Those belong in the implementation process. Separate agents are not a
+prerequisite for a reflective response.
+
+### Promotion criteria
+
+1. Select the target use case and log the specific method/boundary change
+   before editing the executable block. Keep a recoverable v2 baseline.
+2. Check the candidate against the existing safety rules, including correction
+   handling, third-party boundaries and all currently approved crisis cases.
+   Resolve ambiguities with qualified review rather than improvising a new
+   crisis policy in this document.
+3. Compare v2 and v3 on the same model with the synthetic suite and rubrics in
+   the implementation plan. Include misleading history, fabricated memories,
+   wrong interpretations, changing goals and optional summary grounding.
+4. Require no unresolved critical safety failures and a visible improvement
+   in the selected task. Mock UI tests cannot demonstrate model compliance;
+   a small real-model evaluation cannot establish clinical efficacy.
+5. Review onboarding and resource copy for consistency. Test the prompt loader,
+   capture the approved prompt hash, then deliberately promote and restart the
+   API. Retain the ability to roll back if measured behavior regresses.

@@ -3,10 +3,29 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "pnpm -r --parallel run dev",
-    "typecheck": "pnpm -r run typecheck"
+    "dev": "pnpm dev:groq",
+    "typecheck": "pnpm -r run typecheck",
+    "dev:demo": "MOCK_LLM=1 pnpm -r --parallel run dev",
+    "lint": "eslint .",
+    "test:unit": "TS_NODE_PROJECT=apps/api/tsconfig.json node --test -r ts-node/register tests/*.test.ts",
+    "test:e2e": "playwright test --config e2e/playwright.config.js",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm eval:validate && pnpm test:e2e",
+    "dev:groq": "MOCK_LLM=0 ALLOW_LIVE_PROVIDERS=1 pnpm -r --parallel run dev",
+    "eval": "ts-node --project apps/api/tsconfig.json eval/runner.ts",
+    "eval:validate": "pnpm eval validate"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.20.3",
+    "eslint": "^10.11.0",
+    "eslint-plugin-vue": "^10.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.1",
+    "vue-eslint-parser": "^10.4.1",
+    "@anthropic-ai/claude-agent-sdk": "^0.3.278"
   }
 }

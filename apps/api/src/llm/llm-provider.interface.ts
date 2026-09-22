@@ -4,5 +4,5 @@ export interface ChatMessage {
 }
 
 export interface LlmProvider {
-  stream(messages: ChatMessage[]): AsyncIterable<string>;
+  stream(messages: ChatMessage[], signal?: AbortSignal): AsyncIterable<string>;
 }

@@ -1,93 +1,74 @@
 import { defineStore } from 'pinia';
-import type { ChatMessage, VoiceInfo } from '../types';
-import { listVoices, streamMessage, speak } from '../api/session';
+import { markRaw } from 'vue';
+import { LIMITS, type ChatMessage, type AppConfig } from '@mental-help/shared';
+import { loadConfig, streamMessage } from '../api/session';
+import { useOnboardingStore } from './onboarding';
 
 export const useSessionStore = defineStore('session', {
   state: () => ({
-    messages: [] as ChatMessage[],
-    streaming: false,
-    error: null as string | null,
-    voiceReplies: true,
-    speaking: false,
-    voices: [] as VoiceInfo[],
-    selectedVoiceId: null as string | null,
-    voicesLoading: false,
-    voicesError: null as string | null,
+    messages: [] as (ChatMessage & { incomplete?: boolean })[], streaming: false, error: '',
+    config: null as AppConfig | null, configError: false, loading: false,
+    controller: null as AbortController | null, generation: 0, retryText: '',
+    summaryOpen: false, facts: '', interpretations: '', unknowns: '', nextStep: '', copied: false, copyError: false,
   }),
   actions: {
-    async loadVoices() {
-      if (this.voices.length > 0 || this.voicesLoading) return;
-      this.voicesLoading = true;
-      this.voicesError = null;
+    async initialize() {
+      this.loading = true; this.configError = false;
+      try { this.config = await loadConfig(); } catch { this.configError = true; } finally { this.loading = false; }
+    },
+    async send(text: string, retry = false) {
+      if (this.streaming || !text.trim() || !this.config) return;
+      const onboarding = useOnboardingStore();
+      const clean = text.trim();
+      let history = this.messages.filter(m => !m.incomplete).map(({ role, content }) => ({ role, content }));
+      if (retry && history.at(-1)?.role === 'user') history = history.slice(0, -1);
+      const candidate = [...history, { role: 'user' as const, content: clean }];
+      const total = candidate.reduce((n, m) => n + m.content.length, 0) + onboarding.presentingIssue.length + onboarding.goal.length;
+      if (clean.length > LIMITS.message || candidate.length > LIMITS.turns || total > LIMITS.history) {
+        this.error = 'Достигнат е лимитът за този разговор. Можеш да запишеш равносметката и да започнеш нов.'; return;
+      }
+      const id = ++this.generation;
+      const controller = markRaw(new AbortController());
+      this.controller = controller;
+      this.error = ''; this.retryText = ''; this.streaming = true;
+      this.messages = [...candidate, { role: 'assistant', content: '', incomplete: true }];
+      const index = this.messages.length - 1;
+      const timer = window.setTimeout(() => controller.abort('timeout'), LIMITS.timeoutMs + 2000);
       try {
-        this.voices = await listVoices();
-        if (!this.selectedVoiceId && this.voices.length > 0) {
-          this.selectedVoiceId = this.voices[0].id;
+        await streamMessage({ age: onboarding.age!, presentingIssue: onboarding.presentingIssue, goal: onboarding.goal, messages: candidate }, delta => {
+          if (id === this.generation) this.messages[index].content += delta;
+        }, controller.signal);
+        if (id === this.generation) this.messages[index].incomplete = false;
+      } catch {
+        if (id === this.generation) {
+          this.error = controller.signal.aborted && controller.signal.reason !== 'timeout'
+            ? 'Отговорът е спрян. Можеш да опиташ отново.'
+            : 'Отговорът не завърши. Опитай отново след малко.';
+          this.retryText = clean;
         }
-      } catch (e) {
-        const code = e instanceof Error ? e.message : 'unknown';
-        if (code === 'tts_not_configured') {
-          this.voicesError =
-            'ElevenLabs не е конфигуриран. Добави ELEVENLABS_API_KEY в apps/api/.env и рестартирай API-то.';
-        } else if (code === 'voices_unavailable') {
-          this.voicesError =
-            'Неуспешно зареждане на гласове от ElevenLabs. Провери API ключа и рестартирай API-то.';
-        } else {
-          this.voicesError = `Гласовете не се заредиха (${code}).`;
-        }
       } finally {
-        this.voicesLoading = false;
+        window.clearTimeout(timer);
+        if (id === this.generation) { this.streaming = false; this.controller = null; }
       }
     },
-
-    async send(age: number, presentingIssue: string, text: string) {
-      this.error = null;
-      this.messages.push({ role: 'user', content: text });
-      this.messages.push({ role: 'assistant', content: '' });
-      this.streaming = true;
-
-      try {
-        await streamMessage(
-          { age, presentingIssue, messages: this.messages.slice(0, -1) },
-          (delta) => {
-            this.messages[this.messages.length - 1].content += delta;
-          },
-        );
-      } catch (e) {
-        this.error = e instanceof Error ? e.message : 'Unknown error';
-      } finally {
-        this.streaming = false;
-      }
-
-      if (this.voiceReplies && !this.error) {
-        await this.speakLastReply();
-      }
+    stop() { this.controller?.abort(); },
+    retry() { if (this.retryText) void this.send(this.retryText, true); },
+    openSummary() {
+      this.summaryOpen = true; this.copied = false; this.copyError = false;
+      if (!this.facts) this.facts = useOnboardingStore().presentingIssue;
     },
-
-    async speakLastReply() {
-      const last = this.messages[this.messages.length - 1];
-      if (!last || last.role !== 'assistant' || !last.content.trim()) return;
-      await this.playText(last.content);
+    async copySummary() {
+      const text = `Моята равносметка\n\nКакво съм описал:\n${this.facts}\n\nМои предположения:\n${this.interpretations}\n\nКакво още не знам:\n${this.unknowns}\n\nМоя следваща стъпка:\n${this.nextStep}`;
+      const id = this.generation;
+      try { await navigator.clipboard.writeText(text); if (id === this.generation) this.copied = true; }
+      catch { if (id === this.generation) this.copyError = true; }
     },
-
-    async playText(text: string) {
-      if (!text.trim()) return;
-
-      this.speaking = true;
-      try {
-        const blob = await speak(text, this.selectedVoiceId ?? undefined);
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audio.addEventListener('ended', () => URL.revokeObjectURL(url));
-        await audio.play();
-      } catch (e) {
-        // Voice output failing should never block the text conversation —
-        // surface it quietly rather than through session.error.
-        // eslint-disable-next-line no-console
-        console.error('voice reply failed:', e instanceof Error ? e.message : e);
-      } finally {
-        this.speaking = false;
-      }
+    end() {
+      this.controller?.abort();
+      const generation = this.generation + 1;
+      const config = this.config;
+      this.$reset(); this.generation = generation; this.config = config;
+      useOnboardingStore().$reset();
     },
   },
 });

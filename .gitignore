@@ -43,3 +43,10 @@ __pycache__/
 # --- logs -----------------------------------------------------------------
 *.log
 !decision.log
+
+# Local automated verification artifacts
+/test-results/
+/playwright-report/
+
+# Synthetic eval run outputs and human scoring workbooks
+eval/runs/

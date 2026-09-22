@@ -1,219 +1,36 @@
-:root {
-  color-scheme: light dark;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  background: #f6f5f3;
-  color: #1a1a1a;
-}
-
-#app {
-  width: 100%;
-  max-width: 640px;
-  min-height: 100vh;
-  padding: 24px 20px 40px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-h1 {
-  font-size: 1.4rem;
-  margin-bottom: 4px;
-}
-
-.disclaimer {
-  font-size: 0.85rem;
-  color: #6b6459;
-  background: #efe9de;
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin: 8px 0 20px;
-}
-
-.blocked {
-  background: #fde8e8;
-  border-radius: 8px;
-  padding: 16px;
-  color: #7a1f1f;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.95rem;
-}
-
-input,
-textarea {
-  font: inherit;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #cfc8ba;
-  resize: vertical;
-}
-
-button {
-  font: inherit;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  background: #3a3229;
-  color: white;
-  cursor: pointer;
-  align-self: flex-start;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.session {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 4px 2px 16px;
-}
-
-.message {
-  padding: 10px 14px;
-  border-radius: 10px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-}
-
-.message strong {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  opacity: 0.6;
-  margin-bottom: 2px;
-}
-
-.message.user {
-  background: #e4e0d6;
-  align-self: flex-end;
-  max-width: 85%;
-}
-
-.message.assistant {
-  background: #ffffff;
-  border: 1px solid #e3ddd0;
-  max-width: 90%;
-}
-
-.error {
-  color: #7a1f1f;
-  font-size: 0.9rem;
-}
-
-.composer {
-  display: flex;
-  gap: 8px;
-  border-top: 1px solid #e3ddd0;
-  padding-top: 12px;
-}
-
-.composer textarea {
-  flex: 1;
-}
-
-.voice-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.voice-toggle {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: #6b6459;
-}
-
-.voice-toggle input {
-  width: auto;
-  padding: 0;
-}
-
-.voice-picker {
-  flex: 1;
-  min-width: 160px;
-  font-size: 0.85rem;
-  color: #6b6459;
-}
-
-.voice-picker select {
-  font: inherit;
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid #cfc8ba;
-  background: white;
-}
-
-.voice-preview {
-  font-size: 0.85rem;
-  color: #6b6459;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  background: #faf8f5;
-  border-radius: 8px;
-  border: 1px solid #e3ddd0;
-}
-
-.voice-preview summary {
-  cursor: pointer;
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.voice-preview textarea {
-  width: 100%;
-  box-sizing: border-box;
-  margin-bottom: 8px;
-}
-
-.voice-preview button {
-  font-size: 0.85rem;
-}
-
-.status {
-  font-size: 0.85rem;
-  color: #6b6459;
-  font-style: italic;
-}
-
-.composer .mic {
-  align-self: stretch;
-  padding: 10px 14px;
-  background: #6b6459;
-}
-
-.composer .mic.recording {
-  background: #7a1f1f;
-}
+:root { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: #25352e; background: #f4f5ef; color-scheme: light; line-height: 1.6; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+#app { max-width: 800px; margin: auto; padding: 28px 24px 70px; }
+.demo-banner { border: 1px solid #c7d7c3; border-radius: 12px; padding: 14px 18px; background: #e9efdf; font-size: .85rem; margin-bottom: 30px; }
+h1 { font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1.2; letter-spacing: -.04em; margin: 12px 0 20px; }
+h2 { font-size: 1.35rem; }
+.eyebrow { font-size: .73rem; letter-spacing: .12em; color: #55694d; }
+.intro { font-size: 1.1rem; max-width: 560px; }
+.disclaimer { font-size: .85rem; color: #505847; border-left: 3px solid #a6b993; padding: 10px 14px; margin: 22px 0; background: #eef0e7; }
+a { color: #244c35; text-underline-offset: 3px; }
+form, .summary { display: flex; flex-direction: column; gap: 18px; }
+label { display: flex; flex-direction: column; gap: 7px; font-size: .95rem; font-weight: 500; }
+input, textarea { width: 100%; font: inherit; font-weight: 400; padding: 13px 15px; border: 1px solid #adb7a6; border-radius: 9px; background: #fff; color: #25352e; resize: vertical; }
+input[type=number] { max-width: 140px; }
+button { font: inherit; font-weight: 600; padding: 12px 18px; border-radius: 9px; border: 1px solid transparent; background: #314e39; color: #fff; cursor: pointer; align-self: flex-start; }
+button:hover:not(:disabled) { filter: brightness(.94); }
+button.secondary { background: #eef0e7; color: #314e39; border-color: #c3cdba; }
+button:disabled { opacity: .5; cursor: default; }
+:focus-visible { outline: 3px solid #49763e; outline-offset: 3px; }
+.blocked, .error { color: #812e21; background: #fff0e8; border-radius: 9px; padding: 14px; }
+.blocked button { display: block; margin-top: 15px; }
+.session-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.session-header h1 { font-size: 1.65rem; margin: 8px 0; }
+.hint { font-size: .8rem; color: #596652; margin-top: 8px; }
+.messages { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; overflow-wrap: anywhere; }
+.message { white-space: pre-wrap; padding: 16px 20px; border-radius: 14px; max-width: 93%; }
+.message.user { align-self: flex-end; background: #e3e9d9; }
+.message.assistant { align-self: flex-start; background: #fff; border: 1px solid #dce2d3; }
+.message strong { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 7px; }
+.message small { display: block; margin-top: 8px; color: #596652; }
+.composer { border-top: 1px solid #d1dac8; padding-top: 20px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.summary { margin-top: 28px; padding: 22px; background: #fff; border: 1px solid #d1dac8; border-radius: 14px; }
+.summary p, .summary h2 { margin: 0; }
+@media (max-width: 520px) { #app { padding: 16px 16px 40px; } .summary { padding: 16px; } button { padding: 10px 14px; } }

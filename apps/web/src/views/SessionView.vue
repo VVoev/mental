@@ -1,192 +1,43 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, onBeforeUnmount, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { LIMITS } from '@mental-help/shared';
 import { useOnboardingStore } from '../stores/onboarding';
 import { useSessionStore } from '../stores/session';
-import { transcribeAudio } from '../api/session';
-
 const onboarding = useOnboardingStore();
 const session = useSessionStore();
 const draft = ref('');
-const listEl = ref<HTMLElement | null>(null);
-
-const previewText = ref(
-  'Здравей. Какво те притеснява в момента? Разкажи ми със свои думи.',
-);
-const previewError = ref<string | null>(null);
-const previewPlaying = ref(false);
-
-onMounted(() => {
-  void session.loadVoices();
-});
-
-async function send() {
-  if (!draft.value.trim() || session.streaming) return;
-  const text = draft.value;
-  draft.value = '';
-  await session.send(onboarding.age as number, onboarding.presentingIssue, text);
-}
-
-async function previewVoice() {
-  if (previewPlaying.value || !previewText.value.trim()) return;
-  previewError.value = null;
-  previewPlaying.value = true;
-  try {
-    await session.playText(previewText.value);
-  } catch {
-    previewError.value = 'Прослушването се провали.';
-  } finally {
-    previewPlaying.value = false;
-  }
-}
-
-// --- voice input -----------------------------------------------------
-const recording = ref(false);
-const transcribing = ref(false);
-const micError = ref<string | null>(null);
-let mediaRecorder: MediaRecorder | null = null;
-let chunks: Blob[] = [];
-let stream: MediaStream | null = null;
-
-async function startRecording() {
-  micError.value = null;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch {
-    micError.value = 'Нямам достъп до микрофона.';
-    return;
-  }
-  chunks = [];
-  mediaRecorder = new MediaRecorder(stream);
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-  mediaRecorder.onstop = onRecordingStopped;
-  mediaRecorder.start();
-  recording.value = true;
-}
-
-function stopRecording() {
-  mediaRecorder?.stop();
-  stream?.getTracks().forEach((t) => t.stop());
-  recording.value = false;
-}
-
-async function onRecordingStopped() {
-  if (chunks.length === 0) return;
-  const blob = new Blob(chunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
-  transcribing.value = true;
-  try {
-    const text = await transcribeAudio(blob);
-    if (text.trim()) {
-      await session.send(onboarding.age as number, onboarding.presentingIssue, text);
-    }
-  } catch {
-    micError.value = 'Транскрипцията се провали, опитай пак.';
-  } finally {
-    transcribing.value = false;
-  }
-}
-
-async function toggleRecording() {
-  if (session.streaming || transcribing.value) return;
-  if (recording.value) {
-    stopRecording();
-  } else {
-    await startRecording();
-  }
-}
-
-onBeforeUnmount(() => {
-  stream?.getTracks().forEach((t) => t.stop());
-});
-// -----------------------------------------------------------------------
-
-watch(
-  () => session.messages.map((m) => m.content).join('|'),
-  async () => {
-    await nextTick();
-    listEl.value?.scrollTo({ top: listEl.value.scrollHeight });
-  },
-);
+onMounted(() => { if (!session.messages.length) void session.send(onboarding.presentingIssue); });
+onBeforeUnmount(() => session.stop());
+function send() { if (!draft.value.trim() || session.streaming) return; const text = draft.value; draft.value = ''; void session.send(text); }
+function pieces(text: string) { return text.split(/(0700 40 150|\b112\b)/g); }
 </script>
-
 <template>
-  <div class="session">
-    <p class="disclaimer">
-      Не е терапия. При криза: 112, Психологична денонощна линия за кризи:
-      0700 40 150.
-    </p>
-
-    <div class="voice-controls">
-      <label class="voice-toggle">
-        <input type="checkbox" v-model="session.voiceReplies" />
-        Отговорите да се четат на глас
-      </label>
-
-      <label class="voice-picker">
-        <span>Глас</span>
-        <select
-          v-model="session.selectedVoiceId"
-          :disabled="session.voicesLoading || session.voices.length === 0"
-        >
-          <option v-if="session.voicesLoading" disabled value="">Зареждам...</option>
-          <option v-for="v in session.voices" :key="v.id" :value="v.id">
-            {{ v.name }}
-          </option>
-        </select>
-      </label>
+  <section class="session">
+    <header class="session-header"><h1>Изясняване на решение</h1><button class="secondary" @click="session.end">Приключи и изчисти</button></header>
+    <p class="disclaimer">Не е терапия. При криза: <a href="tel:112">112</a>, Психологична денонощна линия за кризи: <a href="tel:070040150">0700 40 150</a>.</p>
+    <label class="goal">Моята цел (незадължително)<input v-model="onboarding.goal" :maxlength="LIMITS.goal" placeholder="Какво искаш да изясниш?" :disabled="session.streaming" /></label>
+    <p class="hint">Промяната на целта важи за следващото съобщение. Можеш и да я изтриеш.</p>
+    <div class="messages" role="log" aria-label="Разговор" :aria-busy="session.streaming">
+      <article v-for="(m, i) in session.messages" :key="i" class="message" :class="m.role" :aria-label="m.role === 'user' ? 'Съобщение от теб' : session.config?.mode === 'demo' ? 'Демо отговор' : 'AI отговор'">
+        <strong>{{ m.role === 'user' ? 'Ти' : session.config?.mode === 'demo' ? 'Демо' : 'AI' }}</strong>
+        <span v-for="(piece, n) in pieces(m.content)" :key="n"><a v-if="piece === '112' || piece === '0700 40 150'" :href="`tel:${piece.replaceAll(' ', '')}`">{{ piece }}</a><template v-else>{{ piece }}</template></span>
+        <small v-if="m.incomplete">{{ session.streaming ? 'Отговорът се показва…' : 'Незавършен отговор' }}</small>
+      </article>
     </div>
-
-    <p v-if="session.voicesError" class="error">{{ session.voicesError }}</p>
-
-    <details class="voice-preview">
-      <summary>Прослушай глас</summary>
-      <textarea v-model="previewText" rows="3" placeholder="Текст за проба..." />
-      <button
-        type="button"
-        :disabled="previewPlaying || session.speaking || !previewText.trim()"
-        @click="previewVoice"
-      >
-        {{ previewPlaying || session.speaking ? '...' : 'Прослушай' }}
-      </button>
-      <p v-if="previewError" class="error">{{ previewError }}</p>
-    </details>
-
-    <div class="messages" ref="listEl">
-      <div
-        v-for="(m, i) in session.messages"
-        :key="i"
-        class="message"
-        :class="m.role"
-      >
-        <strong>{{ m.role === 'user' ? 'Ти' : 'AI' }}</strong>
-        <span>{{ m.content }}</span>
-      </div>
-      <div v-if="session.error" class="error">Грешка: {{ session.error }}</div>
-      <div v-if="micError" class="error">{{ micError }}</div>
-      <div v-if="session.speaking" class="status">говори...</div>
-      <div v-if="transcribing" class="status">транскрибирам...</div>
-    </div>
-
+    <div v-if="session.error" role="alert" class="error"><p>{{ session.error }}</p><button v-if="session.retryText" class="secondary" :disabled="session.streaming" @click="session.retry">Опитай отново</button></div>
     <form class="composer" @submit.prevent="send">
-      <button
-        type="button"
-        class="mic"
-        :class="{ recording }"
-        :disabled="session.streaming || transcribing"
-        @click="toggleRecording"
-      >
-        {{ recording ? '⏹' : '🎙' }}
-      </button>
-      <textarea
-        v-model="draft"
-        rows="2"
-        placeholder="Напиши нещо..."
-        @keydown.enter.exact.prevent="send"
-      ></textarea>
-      <button type="submit" :disabled="session.streaming">
-        {{ session.streaming ? '...' : 'Изпрати' }}
-      </button>
+      <label>Твоето съобщение<textarea v-model="draft" rows="3" :maxlength="LIMITS.message" placeholder="Какво знаеш със сигурност?" :disabled="session.streaming" /></label>
+      <div class="actions"><button type="submit" :disabled="session.streaming || !draft.trim()">Изпрати</button><button v-if="session.streaming" type="button" class="secondary" @click="session.stop">Спри отговора</button><button type="button" class="secondary" :disabled="session.streaming" @click="session.openSummary">Моята равносметка</button></div>
     </form>
-  </div>
+    <section v-if="session.summaryOpen" class="summary" aria-label="Моята равносметка">
+      <h2>Моята равносметка</h2><p>Лична бележка, не AI анализ. Началното описание е копирано дословно; редактирай го свободно. Останалото попълваш ти. Бележката не се изпраща към AI.</p>
+      <label>Какво съм описал<textarea v-model="session.facts" :maxlength="LIMITS.message" rows="3" /></label>
+      <label>Мои предположения<textarea v-model="session.interpretations" :maxlength="LIMITS.message" rows="2" /></label>
+      <label>Какво още не знам<textarea v-model="session.unknowns" :maxlength="LIMITS.message" rows="2" /></label>
+      <label>Моя следваща стъпка (незадължително)<textarea v-model="session.nextStep" :maxlength="LIMITS.message" rows="2" /></label>
+      <div class="actions"><button @click="session.copySummary">Копирай равносметката</button><button class="secondary" @click="session.summaryOpen = false">Затвори</button></div>
+      <p class="hint">Копирането поставя текста в клипборда на устройството. Приключването изчиства приложението, но не клипборда.</p>
+      <p v-if="session.copied" role="status">Копирано.</p><p v-if="session.copyError" role="alert">Копирането не успя. Можеш да маркираш текста ръчно.</p>
+    </section>
+  </section>
 </template>

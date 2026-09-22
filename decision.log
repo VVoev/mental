@@ -307,3 +307,127 @@ docs/prompt/system-prompt.md и .claude/rules/safety.md — 112 и
 0700 40 150. Хванато между другото, докато добавях гласовия UI в същия
 файл.
 Status: active
+## [2026-09-21] Product strategy review and documentation reconciliation
+Context: The owner requested an assessment of an attached AI-team planning
+framework, an implementation plan, architecture updates if needed, and a
+review of the canonical system prompt. The attachment supplies a process,
+not a validated product specification or an instruction to run agents.
+Decision: Reconcile architecture documentation with the current source and
+replace the outdated implementation plan with a staged proposal. Preserve
+the adult, session-only reflective product constraints. Recommend testing
+a narrow non-clinical decision-clarity use case, but leave final positioning,
+commercial terms and implementation approval with the owner.
+Prompt review: Add review notes outside the executable first fenced block.
+The loaded v2 prompt, including all crisis wording, thresholds and resource
+numbers, is unchanged. Any future method or safety revision needs a separate
+decision entry and evaluation before promotion. No resource re-verification
+or clinical validation is claimed by this documentation review.
+Consequences: Runtime multi-agent orchestration, persistent memory, accounts,
+payments and deployment are not approved or implemented by these documents.
+Known discrepancies include absent SafetyModule, mock LLM and verify script,
+voice endpoints without age checks, and potential provider-error content in
+logs. Treat these as implementation/release blockers, not existing safeguards.
+Status: documentation active; product and implementation proposals pending
+
+## [2026-09-21] Implement local decision-clarity demo after owner selection
+Context: The owner selected direction A, text first, and local mock-only
+verification without paid provider calls, and requested completion checkboxes.
+Decision: Implement the local text flow and verification foundation: true mock
+LLM, explicit demo indication, editable goal, user-editable optional reflection
+sheet, bounded inputs, sanitized errors, cancellation/reset and offline tests.
+The demo reflection sheet contains only user text and user-authored notes;
+it does not pretend to be a generated clinical or semantic summary. Promotion
+of a model-generated summary and v3 method still requires separate evaluation.
+Runtime v2 crisis policy/resources remain unchanged. Mock fixture responses
+exercise UI only and are explicitly not evidence of model safety. All voice
+routes are disabled for this text-only build, preventing unguarded provider use.
+Live providers are disabled unless separately opted in; no opt-in is made here.
+Global ephemeral request counters/concurrency and throttler IP state contain
+no transcript and are not conversation/session memory. They bound one process,
+not a durable monetary account budget. Provider billing limits remain pending.
+Use shared TypeScript contracts for new fields and stream handling. A local
+mock walkthrough may precede customer interviews and external release review.
+Consequences: No paid model evaluation, new crisis policy, persistent memory,
+public deployment, customer outreach or payments. Public release gates remain
+open; mark only tested deliverables complete in the implementation plan.
+Status: active
+
+## [2026-09-21] Local demo verification completed
+Result: pnpm verify passes lint, both app type checks, 14 unit tests and
+11 Playwright browser/API tests. Desktop and 390px mobile layout inspected.
+Local demo running on frontend 45173 / API 43100, isolated from existing
+local processes; no paid provider calls. Shared prompt path now resolves
+relative to its module; the first-fence v2 SHA-256 is unchanged.
+Progress: F1, text-only F2/F4 and P1 complete. Demo personal reflection sheet
+available; model-generated P2 summary remains pending evaluated behavior.
+F3 monetary controls, S1 and R1 remain open for live/public use. Voice deferred.
+Status: active
+
+## [2026-09-21] Owner enables Groq for local text testing
+Context: The owner explicitly requested Groq openai/gpt-oss-120b, PORT=3000,
+WEB_ORIGIN=http://localhost:5173, and no ElevenLabs. This supersedes the
+mock-only restriction for their local interactive test, not for automated tests.
+Decision: pnpm dev now selects dev:groq with explicit live-provider flags;
+keep dev:demo and all automated tests offline. Preserve existing server-side
+Groq key, align local URLs and disable all speech routes as before.
+One bounded synthetic live request is authorized as setup verification.
+No provider benchmarks, public deployment or crisis-policy change.
+Public-release review remains pending; local live testing is authorized.
+Status: active
+
+## [2026-09-21] Groq local test verified
+Result: One synthetic request through http://localhost:5173 received a real
+Groq answer. API uses port 3000, model openai/gpt-oss-120b and the requested
+WEB_ORIGIN. No ElevenLabs requests. pnpm verify passed all 14 unit and
+11 browser/API tests offline. Prior demo processes on 43100/45173 stopped.
+Status: active
+
+## [2026-09-22] Synthetic eval suite and evidence-based model selection
+Context: Owner requested scenarios/rubrics to assess the current Groq model
+and decide whether a different model is needed.
+Decision: Add a versioned synthetic Bulgarian suite and per-turn rubrics,
+critical pass/fail gates, anchored quality scoring and reproducible model
+comparison. Preserve the active reflective role and runtime crisis policy;
+this task does not turn the product into a licensed psychotherapy service.
+Exclude legacy scenarios derived from personal conversations from the new
+suite. Store only synthetic eval transcripts in ignored run folders.
+A bounded first smoke evaluation uses four scenarios / at most 12 calls to
+the already selected Groq model. No automatic candidate-model sweep or AI
+judge calls. Review results as provisional engineering evidence, not clinical
+validation; qualified human safety review remains a separate release gate.
+No runtime prompt/resource wording or safety thresholds are changed. New
+rubric expectations beyond current prompt wording are marked target behavior.
+Status: active
+
+## [2026-09-22] Initial eval findings, no automatic model switch
+Result: First burst attempt stopped after three replies and HTTP 429.
+After adding request pacing, a separate 12-call smoke run completed.
+Assistant-provisional review: QUALITY_FAIL, 73.4/100, four ordinary
+criteria failed, zero observed critical failures in these 12 responses.
+Findings: unsupported motive inference, incomplete fact/interpretation
+separation, missing referral to the prescriber, overly interrogative crisis
+style. One narrow contradiction-question criterion needs human adjudication.
+Decision: Preserve both runs; do not switch model or edit the active prompt
+on this sample alone. Next experiment is a separately reviewed prompt
+candidate, then full-suite and paired candidate-model evaluation as needed.
+Validation: pnpm verify passes lint/typecheck, 23 unit tests, suite validation
+and 11 browser/API tests. Raw runs are ignored synthetic artifacts only.
+Status: active; qualified human review and full model evaluation pending
+
+## [2026-09-22] Prompt candidates for controlled evaluation
+Context: Owner requested several system prompts to test which works best.
+Decision: Freeze current v2 as the baseline and add three complete Bulgarian
+candidate prompts: concise reflection, guided conversation and example-led
+reflection. Candidates share the same role/boundary core and exact v2 crisis
+section, including resources and post-crisis rules. Common improvements make
+inferences tentative, scope memory to current context and redirect medication
+questions to the prescriber without prescribing. Differences among candidates
+concern conversational method only; v2-to-candidate comparisons also include
+these documented common improvements.
+The runtime system-prompt.md remains unchanged. Add explicit eval prompt
+selection, recorded identity/hash, and comparison mode that holds model,
+provider, reasoning configuration, suite and generation settings constant.
+No new crisis threshold or phone-number assertion, no automatic deployment,
+no paid comparison sweep. Verify all candidates offline and expose commands
+for deliberate future testing. Human safety review remains a release gate.
+Status: active for evaluation candidates only

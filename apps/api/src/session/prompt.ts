@@ -1,9 +1,8 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-// Assumes process.cwd() === apps/api, which is what pnpm sets when it runs
-// this package's "dev" script (directly or via the root `pnpm -r` aggregate).
-const PROMPT_PATH = resolve(process.cwd(), '../../docs/prompt/system-prompt.md');
+// Resolve from this module so tests and dev commands load the same policy.
+const PROMPT_PATH = resolve(__dirname, '../../../../docs/prompt/system-prompt.md');
 
 let cachedTemplate: string | null = null;
 

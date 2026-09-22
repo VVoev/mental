@@ -1,3 +1,4 @@
+import { assertLiveAllowed } from '../common/runtime';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { ChatMessage, LlmProvider } from './llm-provider.interface';
@@ -15,7 +16,8 @@ const USER_AGENT =
 export class GroqProvider implements LlmProvider {
   constructor(private readonly config: ConfigService) {}
 
-  async *stream(messages: ChatMessage[]): AsyncIterable<string> {
+  async *stream(messages: ChatMessage[], signal?: AbortSignal): AsyncIterable<string> {
+    assertLiveAllowed();
     const apiKey = this.config.get<string>('GROQ_API_KEY');
     if (!apiKey) {
       throw new Error('GROQ_API_KEY is not set');
@@ -24,6 +26,7 @@ export class GroqProvider implements LlmProvider {
 
     const res = await fetch(API_URL, {
       method: 'POST',
+      signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
@@ -40,14 +43,15 @@ export class GroqProvider implements LlmProvider {
     });
 
     if (!res.ok || !res.body) {
-      const detail = await res.text().catch(() => '');
-      throw new Error(`Groq API error ${res.status}: ${detail}`);
+      await res.body?.cancel();
+      throw new Error('provider_request_failed');
     }
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
+    try {
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -66,9 +70,14 @@ export class GroqProvider implements LlmProvider {
           const delta = parsed.choices?.[0]?.delta?.content;
           if (delta) yield delta;
         } catch {
-          // ignore malformed / keep-alive lines
+          throw new Error('provider_stream_invalid');
         }
       }
+    }
+    throw new Error('provider_stream_incomplete');
+    } finally {
+      await reader.cancel().catch(() => undefined);
+      reader.releaseLock();
     }
   }
 }

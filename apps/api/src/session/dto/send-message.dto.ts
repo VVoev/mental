@@ -1,36 +1,15 @@
 import { Type } from 'class-transformer';
-import {
-  ArrayMaxSize,
-  IsArray,
-  IsIn,
-  IsInt,
-  IsString,
-  Min,
-  MinLength,
-  ValidateNested,
-} from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { LIMITS } from '@mental-help/shared';
 
 export class MessageDto {
-  @IsIn(['user', 'assistant'])
-  role!: 'user' | 'assistant';
-
-  @IsString()
-  @MinLength(1)
-  content!: string;
+  @IsIn(['user', 'assistant']) role!: 'user' | 'assistant';
+  @IsString() @Matches(/\S/) @MaxLength(LIMITS.message) content!: string;
 }
-
 export class SendMessageDto {
-  @IsInt()
-  @Min(0)
-  age!: number;
-
-  @IsString()
-  @MinLength(1)
-  presentingIssue!: string;
-
-  @IsArray()
-  @ArrayMaxSize(60)
-  @ValidateNested({ each: true })
-  @Type(() => MessageDto)
-  messages!: MessageDto[];
+  @IsInt() @Min(0) @Max(130) age!: number;
+  @IsString() @Matches(/\S/) @MaxLength(LIMITS.message) presentingIssue!: string;
+  @IsOptional() @IsString() @MaxLength(LIMITS.goal) goal?: string;
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(LIMITS.turns)
+  @ValidateNested({ each: true }) @Type(() => MessageDto) messages!: MessageDto[];
 }
